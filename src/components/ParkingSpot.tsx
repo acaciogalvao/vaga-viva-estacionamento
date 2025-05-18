@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Car, Bike, Phone, X } from 'lucide-react';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
@@ -16,53 +15,38 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
   const [cost, setCost] = useState(spot.vehicleInfo?.cost || 0);
 
   useEffect(() => {
-    if (spot.isOccupied) {
-      // Initial calculation when component mounts
-      if (spot.vehicleInfo) {
+    let secondTimer: NodeJS.Timeout;
+    let minuteTimer: NodeJS.Timeout;
+    
+    if (spot.isOccupied && spot.vehicleInfo) {
+      // Initial calculation when component mounts or spot changes
+      const calculateTimeAndCost = () => {
         const now = new Date();
-        const entryTime = new Date(spot.vehicleInfo.entryTime);
+        const entryTime = new Date(spot.vehicleInfo!.entryTime);
         const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-        
-        setMinutes(diffInMinutes);
         
         // Calculate cost: 10 BRL per hour for cars, 8 BRL per hour for motorcycles
         const hourlyRate = spot.type === 'car' ? 10 : 8;
         const newCost = (hourlyRate * diffInMinutes) / 60;
+        
+        setMinutes(diffInMinutes);
         setCost(newCost);
         
         // Update the spot info
-        spot.vehicleInfo.minutes = diffInMinutes;
-        spot.vehicleInfo.cost = newCost;
-      }
-
-      // Update timer every second for real-time display
-      const secondTimer = setInterval(() => {
         if (spot.vehicleInfo) {
-          const now = new Date();
-          const entryTime = new Date(spot.vehicleInfo.entryTime);
-          const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-          
-          setMinutes(diffInMinutes);
-        }
-      }, 1000); // Update every second
-      
-      // Update cost every minute
-      const minuteTimer = setInterval(() => {
-        if (spot.vehicleInfo) {
-          const now = new Date();
-          const entryTime = new Date(spot.vehicleInfo.entryTime);
-          const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-          
-          // Calculate cost: 10 BRL per hour for cars, 8 BRL per hour for motorcycles
-          const hourlyRate = spot.type === 'car' ? 10 : 8;
-          const newCost = (hourlyRate * diffInMinutes) / 60;
-          setCost(newCost);
-          
-          // Update the spot info
           spot.vehicleInfo.minutes = diffInMinutes;
           spot.vehicleInfo.cost = newCost;
         }
-      }, 60000); // Update every minute
+      };
+      
+      // Run calculation immediately
+      calculateTimeAndCost();
+
+      // Update timer every second for real-time display
+      secondTimer = setInterval(calculateTimeAndCost, 1000);
+      
+      // Update cost calculation every minute
+      minuteTimer = setInterval(calculateTimeAndCost, 60000);
       
       return () => {
         clearInterval(secondTimer);
