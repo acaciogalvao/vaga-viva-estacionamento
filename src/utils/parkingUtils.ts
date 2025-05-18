@@ -23,7 +23,7 @@ export const validateLicensePlate = (plate: string): boolean => {
   const standardRegex = /^[A-Z]{3}-?\d{4}$/;
   const mercosulRegex = /^[A-Z]{3}\d[A-Z]\d{2}$/;
   
-  // Ensure minimum length
+  // Verificação rigorosa do comprimento mínimo
   if (plate.trim().length < 7) {
     return false;
   }

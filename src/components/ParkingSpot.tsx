@@ -15,42 +15,36 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
   const [cost, setCost] = useState(spot.vehicleInfo?.cost || 0);
 
   useEffect(() => {
-    let secondTimer: NodeJS.Timeout;
-    let minuteTimer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined;
     
     if (spot.isOccupied && spot.vehicleInfo) {
-      // Initial calculation when component mounts or spot changes
-      const calculateTimeAndCost = () => {
+      // Função para calcular o tempo e custo
+      const updateTimeAndCost = () => {
         const now = new Date();
         const entryTime = new Date(spot.vehicleInfo!.entryTime);
         const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
         
-        // Calculate cost: 10 BRL per hour for cars, 8 BRL per hour for motorcycles
+        // Calcular custo: R$10 por hora para carros, R$8 por hora para motos
         const hourlyRate = spot.type === 'car' ? 10 : 8;
-        const newCost = (hourlyRate * diffInMinutes) / 60;
+        const newCost = parseFloat(((hourlyRate * diffInMinutes) / 60).toFixed(2));
         
         setMinutes(diffInMinutes);
         setCost(newCost);
         
-        // Update the spot info
-        if (spot.vehicleInfo) {
-          spot.vehicleInfo.minutes = diffInMinutes;
-          spot.vehicleInfo.cost = newCost;
-        }
+        // Atualizar as informações da vaga
+        spot.vehicleInfo.minutes = diffInMinutes;
+        spot.vehicleInfo.cost = newCost;
       };
       
-      // Run calculation immediately
-      calculateTimeAndCost();
-
-      // Update timer every second for real-time display
-      secondTimer = setInterval(calculateTimeAndCost, 1000);
+      // Executar cálculo imediatamente na montagem do componente
+      updateTimeAndCost();
       
-      // Update cost calculation every minute
-      minuteTimer = setInterval(calculateTimeAndCost, 60000);
+      // Definir um intervalo para atualizar a cada segundo
+      timer = setInterval(updateTimeAndCost, 1000);
       
+      // Limpar o intervalo na desmontagem
       return () => {
-        clearInterval(secondTimer);
-        clearInterval(minuteTimer);
+        if (timer) clearInterval(timer);
       };
     }
   }, [spot]);
