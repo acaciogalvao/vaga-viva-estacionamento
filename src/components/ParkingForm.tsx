@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Car, Motorcycle, Search } from 'lucide-react';
+import { Car, Bike, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,7 +166,7 @@ const ParkingForm: React.FC<ParkingFormProps> = ({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="motorcycle" id="motorcycle" />
                 <Label htmlFor="motorcycle" className="flex items-center gap-1 cursor-pointer">
-                  <Motorcycle size={18} />
+                  <Bike size={18} />
                   Moto ({availableMotorcycles} vagas)
                 </Label>
               </div>

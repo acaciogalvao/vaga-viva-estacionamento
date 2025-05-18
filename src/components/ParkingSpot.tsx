@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Car, Motorcycle, Phone, X } from 'lucide-react';
+import { Car, Bike, Phone, X } from 'lucide-react';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 import { formatTime, formatCurrency } from '@/utils/parkingUtils';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
           {spot.type === 'car' ? (
             <Car size={20} />
           ) : (
-            <Motorcycle size={20} />
+            <Bike size={20} />
           )}
         </div>
         <div className="text-sm font-medium">
