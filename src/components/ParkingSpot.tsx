@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Car, Bike, Phone, X } from 'lucide-react';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
@@ -15,7 +16,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
   const [cost, setCost] = useState(spot.vehicleInfo?.cost || 0);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
+    let timer: NodeJS.Timeout | null = null;
     
     if (spot.isOccupied && spot.vehicleInfo) {
       // Função para calcular o tempo e custo
@@ -32,8 +33,8 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
         setCost(newCost);
         
         // Atualizar as informações da vaga
-        spot.vehicleInfo.minutes = diffInMinutes;
-        spot.vehicleInfo.cost = newCost;
+        spot.vehicleInfo!.minutes = diffInMinutes;
+        spot.vehicleInfo!.cost = newCost;
       };
       
       // Executar cálculo imediatamente na montagem do componente
@@ -41,12 +42,12 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
       
       // Definir um intervalo para atualizar a cada segundo
       timer = setInterval(updateTimeAndCost, 1000);
-      
-      // Limpar o intervalo na desmontagem
-      return () => {
-        if (timer) clearInterval(timer);
-      };
     }
+    
+    // Limpar o intervalo na desmontagem
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [spot]);
 
   const getSpotClassName = () => {

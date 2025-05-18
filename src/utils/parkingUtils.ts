@@ -1,4 +1,3 @@
-
 // Calculate cost based on vehicle type and time
 export const calculateCost = (vehicleType: 'car' | 'motorcycle', minutes: number): number => {
   const hourlyRate = vehicleType === 'car' ? 10 : 8;
@@ -23,12 +22,13 @@ export const validateLicensePlate = (plate: string): boolean => {
   const standardRegex = /^[A-Z]{3}-?\d{4}$/;
   const mercosulRegex = /^[A-Z]{3}\d[A-Z]\d{2}$/;
   
-  // Verificação rigorosa do comprimento mínimo
-  if (plate.trim().length < 7) {
+  // Verificação rigorosa do comprimento e formato
+  const cleaned = plate.trim();
+  if (cleaned.length < 7 || cleaned.length > 8) {
     return false;
   }
   
-  return standardRegex.test(plate) || mercosulRegex.test(plate);
+  return standardRegex.test(cleaned) || mercosulRegex.test(cleaned);
 };
 
 // Format Brazilian license plate
@@ -41,7 +41,8 @@ export const formatLicensePlate = (plate: string): string => {
     return `${cleaned.substring(0, 3)}-${cleaned.substring(3)}`;
   }
   
-  return cleaned;
+  // Limitar a 8 caracteres no máximo (7 sem hífen para placa padrão, 7 para Mercosul)
+  return cleaned.substring(0, 7);
 };
 
 // Format Brazilian phone number
