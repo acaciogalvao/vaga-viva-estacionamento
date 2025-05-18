@@ -17,14 +17,41 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
 
   useEffect(() => {
     if (spot.isOccupied) {
-      const timer = setInterval(() => {
-        // Update time and cost every minute
+      // Initial calculation when component mounts
+      if (spot.vehicleInfo) {
+        const now = new Date();
+        const entryTime = new Date(spot.vehicleInfo.entryTime);
+        const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
+        
+        setMinutes(diffInMinutes);
+        
+        // Calculate cost: 10 BRL per hour for cars, 8 BRL per hour for motorcycles
+        const hourlyRate = spot.type === 'car' ? 10 : 8;
+        const newCost = (hourlyRate * diffInMinutes) / 60;
+        setCost(newCost);
+        
+        // Update the spot info
+        spot.vehicleInfo.minutes = diffInMinutes;
+        spot.vehicleInfo.cost = newCost;
+      }
+
+      // Update timer every second for real-time display
+      const secondTimer = setInterval(() => {
         if (spot.vehicleInfo) {
           const now = new Date();
           const entryTime = new Date(spot.vehicleInfo.entryTime);
           const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
           
           setMinutes(diffInMinutes);
+        }
+      }, 1000); // Update every second
+      
+      // Update cost every minute
+      const minuteTimer = setInterval(() => {
+        if (spot.vehicleInfo) {
+          const now = new Date();
+          const entryTime = new Date(spot.vehicleInfo.entryTime);
+          const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
           
           // Calculate cost: 10 BRL per hour for cars, 8 BRL per hour for motorcycles
           const hourlyRate = spot.type === 'car' ? 10 : 8;
@@ -37,7 +64,10 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
         }
       }, 60000); // Update every minute
       
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(secondTimer);
+        clearInterval(minuteTimer);
+      };
     }
   }, [spot]);
 
