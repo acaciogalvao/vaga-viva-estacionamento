@@ -12,8 +12,8 @@ interface ParkingSpotProps {
 }
 
 const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
-  const [minutes, setMinutes] = useState(spot.vehicleInfo?.minutes || 0);
-  const [cost, setCost] = useState(spot.vehicleInfo?.cost || 0);
+  const [minutes, setMinutes] = useState(0);
+  const [cost, setCost] = useState(0);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -32,23 +32,29 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
         setMinutes(diffInMinutes);
         setCost(newCost);
         
-        // Atualizar as informações da vaga
-        spot.vehicleInfo!.minutes = diffInMinutes;
-        spot.vehicleInfo!.cost = newCost;
+        // Atualizar as informações da vaga no objeto original
+        if (spot.vehicleInfo) {
+          spot.vehicleInfo.minutes = diffInMinutes;
+          spot.vehicleInfo.cost = newCost;
+        }
       };
       
-      // Executar cálculo imediatamente na montagem do componente
+      // Executar cálculo imediatamente
       updateTimeAndCost();
       
-      // Definir um intervalo para atualizar a cada segundo
-      timer = setInterval(updateTimeAndCost, 1000);
+      // Definir um intervalo para atualizar a cada minuto (60000ms)
+      timer = setInterval(updateTimeAndCost, 60000);
+    } else {
+      // Resetar valores quando a vaga não está ocupada
+      setMinutes(0);
+      setCost(0);
     }
     
     // Limpar o intervalo na desmontagem
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [spot]);
+  }, [spot.isOccupied, spot.vehicleInfo?.entryTime]);
 
   const getSpotClassName = () => {
     const baseClasses = "gradient-card p-4 flex flex-col h-full min-h-[180px]";

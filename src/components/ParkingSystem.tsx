@@ -4,6 +4,8 @@ import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking
 import ParkingSpot from '@/components/ParkingSpot';
 import ParkingForm from '@/components/ParkingForm';
 import { useToast } from '@/hooks/use-toast';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ParkingSystem: React.FC = () => {
   // Initialize parking spots: 30 for cars (1-30) and 30 for motorcycles (31-60)
@@ -119,6 +121,11 @@ const ParkingSystem: React.FC = () => {
     }
   };
 
+  const handleCloseSearch = () => {
+    setIsSearching(false);
+    setSearchResults([]);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <h1 className="text-3xl md:text-4xl font-bold text-center mb-6 bg-gradient-primary bg-clip-text text-transparent">
@@ -136,9 +143,20 @@ const ParkingSystem: React.FC = () => {
       {/* Search results */}
       {isSearching && searchResults.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4 bg-gradient-secondary bg-clip-text text-transparent">
-            Resultados da Busca
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold bg-gradient-secondary bg-clip-text text-transparent">
+              Resultados da Busca
+            </h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleCloseSearch}
+              className="flex items-center gap-1"
+            >
+              <X size={16} />
+              Fechar
+            </Button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {searchResults.map(spot => (
               <ParkingSpot 
