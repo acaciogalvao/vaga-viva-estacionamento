@@ -9,9 +9,16 @@ import { cn } from '@/lib/utils';
 interface ParkingSpotProps {
   spot: ParkingSpotType;
   onRelease: (spotId: number) => void;
+  isSearchResult?: boolean;
+  onClearSearch?: () => void;
 }
 
-const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
+const ParkingSpot: React.FC<ParkingSpotProps> = ({ 
+  spot, 
+  onRelease, 
+  isSearchResult = false,
+  onClearSearch 
+}) => {
   const [minutes, setMinutes] = useState(0);
   const [cost, setCost] = useState(0);
 
@@ -42,8 +49,8 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
       // Executar cálculo imediatamente
       updateTimeAndCost();
       
-      // Definir um intervalo para atualizar a cada minuto (60000ms)
-      timer = setInterval(updateTimeAndCost, 60000);
+      // Definir um intervalo para atualizar a cada segundo para tempo real
+      timer = setInterval(updateTimeAndCost, 1000);
     } else {
       // Resetar valores quando a vaga não está ocupada
       setMinutes(0);
@@ -57,7 +64,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
   }, [spot.isOccupied, spot.vehicleInfo?.entryTime]);
 
   const getSpotClassName = () => {
-    const baseClasses = "gradient-card p-4 flex flex-col h-full min-h-[180px]";
+    const baseClasses = "gradient-card p-4 flex flex-col h-full min-h-[180px] relative";
     
     if (spot.isOccupied) {
       return cn(
@@ -74,6 +81,18 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({ spot, onRelease }) => {
 
   return (
     <div className={getSpotClassName()}>
+      {/* Botão X para limpar busca - só aparece nos resultados de busca */}
+      {isSearchResult && onClearSearch && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearSearch}
+          className="absolute top-2 right-2 h-6 w-6 p-0 bg-white/20 hover:bg-white/30 border-white/40"
+        >
+          <X size={12} />
+        </Button>
+      )}
+
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <span className="font-bold text-lg mr-2">#{spot.id}</span>

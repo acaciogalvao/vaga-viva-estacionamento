@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking';
 import ParkingSpot from '@/components/ParkingSpot';
 import ParkingForm from '@/components/ParkingForm';
@@ -36,6 +35,7 @@ const ParkingSystem: React.FC = () => {
   const [searchResults, setSearchResults] = useState<ParkingSpotType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  const formRef = useRef<{ clearSearch: () => void }>(null);
 
   // Calculate available spots
   const availableCars = spots.filter(s => s.type === 'car' && !s.isOccupied).length;
@@ -121,9 +121,13 @@ const ParkingSystem: React.FC = () => {
     }
   };
 
-  const handleCloseSearch = () => {
+  const handleClearSearch = () => {
     setIsSearching(false);
     setSearchResults([]);
+    // Limpar o campo de busca no formulário
+    if (formRef.current) {
+      formRef.current.clearSearch();
+    }
   };
 
   return (
@@ -134,6 +138,7 @@ const ParkingSystem: React.FC = () => {
       
       {/* Form component */}
       <ParkingForm 
+        ref={formRef}
         onPark={handleParkVehicle} 
         onSearch={handleSearch}
         availableCars={availableCars}
@@ -150,7 +155,7 @@ const ParkingSystem: React.FC = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={handleCloseSearch}
+              onClick={handleClearSearch}
               className="flex items-center gap-1"
             >
               <X size={16} />
@@ -162,7 +167,9 @@ const ParkingSystem: React.FC = () => {
               <ParkingSpot 
                 key={`search-${spot.id}`} 
                 spot={spot} 
-                onRelease={handleReleaseSpot} 
+                onRelease={handleReleaseSpot}
+                isSearchResult={true}
+                onClearSearch={handleClearSearch}
               />
             ))}
           </div>
