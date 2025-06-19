@@ -139,7 +139,7 @@ const ParkingSystem: React.FC = () => {
           <h2 className="text-xl font-bold mb-4 bg-gradient-secondary bg-clip-text text-transparent">
             Resultados da Busca
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {searchResults.map(spot => (
               <ParkingSpot 
                 key={`search-${spot.id}`} 
@@ -156,7 +156,7 @@ const ParkingSystem: React.FC = () => {
         <h2 className="text-xl font-bold mb-4 bg-gradient-primary bg-clip-text text-transparent flex items-center gap-2">
           Vagas para Carros ({availableCars} disponíveis)
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {spots.filter(spot => spot.type === 'car').map(spot => (
             <ParkingSpot 
               key={spot.id} 
@@ -172,7 +172,7 @@ const ParkingSystem: React.FC = () => {
         <h2 className="text-xl font-bold mb-4 bg-gradient-secondary bg-clip-text text-transparent flex items-center gap-2">
           Vagas para Motos ({availableMotorcycles} disponíveis)
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {spots.filter(spot => spot.type === 'motorcycle').map(spot => (
             <ParkingSpot 
               key={spot.id} 
