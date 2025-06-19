@@ -148,9 +148,20 @@ const ParkingSystem: React.FC = () => {
       {/* Search results */}
       {isSearching && searchResults.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-bold mb-4 bg-gradient-secondary bg-clip-text text-transparent">
-            Resultados da Busca
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold bg-gradient-secondary bg-clip-text text-transparent">
+              Resultados da Busca
+            </h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleClearSearch}
+              className="flex items-center gap-1"
+            >
+              <X size={16} />
+              Fechar
+            </Button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {searchResults.map(spot => (
               <ParkingSpot 
