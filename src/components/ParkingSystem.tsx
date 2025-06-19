@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking';
 import ParkingSpot from '@/components/ParkingSpot';
-import ParkingForm from '@/components/ParkingForm';
+import ParkingForm, { ParkingFormRef } from '@/components/ParkingForm';
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ const ParkingSystem: React.FC = () => {
   const [searchResults, setSearchResults] = useState<ParkingSpotType[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
-  const formRef = useRef<{ clearSearch: () => void }>(null);
+  const formRef = useRef<ParkingFormRef>(null);
 
   // Calculate available spots
   const availableCars = spots.filter(s => s.type === 'car' && !s.isOccupied).length;

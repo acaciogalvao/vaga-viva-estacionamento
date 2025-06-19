@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Car, Bike, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,17 +20,28 @@ interface ParkingFormProps {
   availableMotorcycles: number;
 }
 
-const ParkingForm: React.FC<ParkingFormProps> = ({ 
+export interface ParkingFormRef {
+  clearSearch: () => void;
+}
+
+const ParkingForm = forwardRef<ParkingFormRef, ParkingFormProps>(({ 
   onPark, 
   onSearch, 
   availableCars, 
   availableMotorcycles 
-}) => {
+}, ref) => {
   const [licensePlate, setLicensePlate] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [vehicleType, setVehicleType] = useState<VehicleType>('car');
   const [searchValue, setSearchValue] = useState('');
   const { toast } = useToast();
+
+  // Expose clearSearch method to parent component
+  useImperativeHandle(ref, () => ({
+    clearSearch: () => {
+      setSearchValue('');
+    }
+  }));
 
   const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatLicensePlate(e.target.value);
@@ -214,6 +225,8 @@ const ParkingForm: React.FC<ParkingFormProps> = ({
       </div>
     </div>
   );
-};
+});
+
+ParkingForm.displayName = 'ParkingForm';
 
 export default ParkingForm;
