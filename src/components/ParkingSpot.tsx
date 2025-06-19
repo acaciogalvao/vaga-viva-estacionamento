@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Car, Bike, Phone, X } from 'lucide-react';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
-import { formatTime, formatCurrency } from '@/utils/parkingUtils';
+import { formatCurrency } from '@/utils/parkingUtils';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +19,9 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
   isSearchResult = false,
   onClearSearch 
 }) => {
+  const [seconds, setSeconds] = useState(0);
   const [minutes, setMinutes] = useState(0);
+  const [hours, setHours] = useState(0);
   const [cost, setCost] = useState(0);
 
   useEffect(() => {
@@ -30,18 +32,25 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
       const updateTimeAndCost = () => {
         const now = new Date();
         const entryTime = new Date(spot.vehicleInfo!.entryTime);
-        const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
+        const diffInSeconds = Math.floor((now.getTime() - entryTime.getTime()) / 1000);
+        
+        const newHours = Math.floor(diffInSeconds / 3600);
+        const newMinutes = Math.floor((diffInSeconds % 3600) / 60);
+        const newSeconds = diffInSeconds % 60;
         
         // Calcular custo: R$10 por hora para carros, R$8 por hora para motos
         const hourlyRate = spot.type === 'car' ? 10 : 8;
-        const newCost = parseFloat(((hourlyRate * diffInMinutes) / 60).toFixed(2));
+        const totalMinutes = Math.floor(diffInSeconds / 60);
+        const newCost = parseFloat(((hourlyRate * totalMinutes) / 60).toFixed(2));
         
-        setMinutes(diffInMinutes);
+        setHours(newHours);
+        setMinutes(newMinutes);
+        setSeconds(newSeconds);
         setCost(newCost);
         
         // Atualizar as informações da vaga no objeto original
         if (spot.vehicleInfo) {
-          spot.vehicleInfo.minutes = diffInMinutes;
+          spot.vehicleInfo.minutes = totalMinutes;
           spot.vehicleInfo.cost = newCost;
         }
       };
@@ -49,11 +58,13 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
       // Executar cálculo imediatamente
       updateTimeAndCost();
       
-      // Definir um intervalo para atualizar a cada segundo para tempo real
+      // Definir um intervalo para atualizar a cada segundo
       timer = setInterval(updateTimeAndCost, 1000);
     } else {
       // Resetar valores quando a vaga não está ocupada
+      setHours(0);
       setMinutes(0);
+      setSeconds(0);
       setCost(0);
     }
     
@@ -79,20 +90,12 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
     );
   };
 
+  const formatTime = (h: number, m: number, s: number): string => {
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className={getSpotClassName()}>
-      {/* Botão X para limpar busca - só aparece nos resultados de busca */}
-      {isSearchResult && onClearSearch && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClearSearch}
-          className="absolute top-2 right-2 h-6 w-6 p-0 bg-white/20 hover:bg-white/30 border-white/40"
-        >
-          <X size={12} />
-        </Button>
-      )}
-
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <span className="font-bold text-lg mr-2">#{spot.id}</span>
@@ -127,7 +130,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
             <div>
               <div className="font-bold">Tempo:</div>
               <div className="bg-white/20 rounded-md p-1 text-center">
-                {formatTime(minutes)}
+                {formatTime(hours, minutes, seconds)}
               </div>
             </div>
             <div>
