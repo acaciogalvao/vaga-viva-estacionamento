@@ -9,7 +9,111 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      parking_sessions: {
+        Row: {
+          cost: number | null
+          created_at: string
+          entry_time: string
+          exit_time: string | null
+          id: string
+          is_active: boolean
+          license_plate: string
+          phone_number: string
+          spot_id: number
+          user_id: string
+          vehicle_type: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          entry_time?: string
+          exit_time?: string | null
+          id?: string
+          is_active?: boolean
+          license_plate: string
+          phone_number: string
+          spot_id: number
+          user_id: string
+          vehicle_type: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          entry_time?: string
+          exit_time?: string | null
+          id?: string
+          is_active?: boolean
+          license_plate?: string
+          phone_number?: string
+          spot_id?: number
+          user_id?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
