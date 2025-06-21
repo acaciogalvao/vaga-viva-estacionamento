@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LockReset } from 'lucide-react';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AuthForm = () => {
@@ -219,7 +218,7 @@ const AuthForm = () => {
             <TabsContent value="reset">
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div className="text-center mb-4">
-                  <LockReset className="w-12 h-12 mx-auto text-blue-500 mb-2" />
+                  <Lock className="w-12 h-12 mx-auto text-blue-500 mb-2" />
                   <h3 className="text-lg font-medium">Redefinir Senha</h3>
                   <p className="text-sm text-gray-600">
                     Digite seu email para receber um link de redefinição
