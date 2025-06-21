@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -81,7 +80,12 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack }) => {
           variant: 'destructive',
         });
       } else {
-        setSessions(data || []);
+        // Type assertion to ensure vehicle_type is the correct union type
+        const typedSessions: ParkingSession[] = (data || []).map(session => ({
+          ...session,
+          vehicle_type: session.vehicle_type as 'car' | 'motorcycle'
+        }));
+        setSessions(typedSessions);
       }
     } catch (error) {
       console.error('Error in loadSessions:', error);
