@@ -1,7 +1,9 @@
-// Calculate cost based on vehicle type and time
-export const calculateCost = (vehicleType: 'car' | 'motorcycle', minutes: number): number => {
-  const hourlyRate = vehicleType === 'car' ? 10 : 8;
-  return parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
+
+// Calculate cost based on vehicle type and time using custom rates
+export const calculateCost = (vehicleType: 'car' | 'motorcycle', minutes: number, carRate: number = 3.0, motorcycleRate: number = 2.0): number => {
+  const hourlyRate = vehicleType === 'car' ? carRate : motorcycleRate;
+  const hours = Math.ceil(minutes / 60);
+  return Math.max(hours * hourlyRate, hourlyRate); // Minimum 1 hour charge
 };
 
 // Format time for display

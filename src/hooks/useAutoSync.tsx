@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useParkingSettings } from '@/hooks/useParkingSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 
@@ -13,6 +14,7 @@ interface UseAutoSyncProps {
 export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
   const { user } = useAuth();
   const { isSubscribed } = useSubscription();
+  const { settings } = useParkingSettings();
 
   useEffect(() => {
     if (!user || !isSubscribed) return;
@@ -53,7 +55,7 @@ export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
                 const entryTime = new Date(session.entry_time);
                 const now = new Date();
                 const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-                const baseRate = session.vehicle_type === 'car' ? 3.0 : 2.0;
+                const baseRate = session.vehicle_type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
                 const hours = Math.ceil(minutes / 60);
                 const cost = Math.max(hours * baseRate, baseRate);
                 
@@ -86,5 +88,5 @@ export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
     syncWithDatabase();
 
     return () => clearInterval(syncInterval);
-  }, [user, isSubscribed, setSpots]);
+  }, [user, isSubscribed, setSpots, settings]);
 };

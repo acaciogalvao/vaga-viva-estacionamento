@@ -1,6 +1,7 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useParkingSettings } from '@/hooks/useParkingSettings';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 
 interface UseRealtimeUpdatesProps {
@@ -10,13 +11,14 @@ interface UseRealtimeUpdatesProps {
 
 export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps) => {
   const { user } = useAuth();
+  const { settings } = useParkingSettings();
 
   useEffect(() => {
     if (!user) return;
 
-    // Função para calcular o custo baseado no tempo
+    // Função para calcular o custo baseado no tempo e configurações personalizadas
     const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
-      const baseRate = vehicleType === 'car' ? 3.0 : 2.0; // R$ por hora
+      const baseRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
       const hours = Math.ceil(minutes / 60);
       return Math.max(hours * baseRate, baseRate); // Mínimo 1 hora de cobrança
     };
@@ -52,5 +54,5 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     updateCosts();
 
     return () => clearInterval(interval);
-  }, [user, setSpots]);
+  }, [user, setSpots, settings]);
 };
