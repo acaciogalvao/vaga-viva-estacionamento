@@ -72,12 +72,14 @@ export const useSubscription = () => {
     if (!user || !subscription) return;
 
     try {
+      const subscriptionEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      
       const { error } = await supabase
         .from('subscribers')
         .update({
           subscribed: true,
           subscription_tier: tier,
-          subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          subscription_end: subscriptionEndDate,
         })
         .eq('id', subscription.id);
 
@@ -93,10 +95,30 @@ export const useSubscription = () => {
           title: 'Assinatura ativada!',
           description: `Plano ${tier} ativado com sucesso!`,
         });
+        
+        // Send confirmation email
+        await sendConfirmationEmail(tier, subscriptionEndDate);
+        
         fetchSubscription();
       }
     } catch (error) {
       console.error('Error in updateSubscription:', error);
+    }
+  };
+
+  const sendConfirmationEmail = async (tier: string, subscriptionEnd: string) => {
+    if (!user) return;
+
+    try {
+      await supabase.functions.invoke('send-confirmation-email', {
+        body: {
+          email: user.email,
+          subscriptionTier: tier,
+          subscriptionEnd: subscriptionEnd,
+        },
+      });
+    } catch (error) {
+      console.error('Error sending confirmation email:', error);
     }
   };
 

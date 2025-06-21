@@ -5,15 +5,19 @@ import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking
 import ParkingSpot from '@/components/ParkingSpot';
 import ParkingForm, { ParkingFormRef } from '@/components/ParkingForm';
 import { useToast } from '@/hooks/use-toast';
-import { X, User, Settings } from 'lucide-react';
+import { X, User, Settings, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ParkingSystemWithAuthProps {
   onShowDashboard: () => void;
+  onShowReports: () => void;
 }
 
-const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({ onShowDashboard }) => {
+const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({ 
+  onShowDashboard, 
+  onShowReports 
+}) => {
   const { user } = useAuth();
   const { isSubscribed, subscriptionTier } = useSubscription();
   
@@ -46,6 +50,68 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({ onShowDas
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
   const formRef = useRef<ParkingFormRef>(null);
+
+  // Load active parking sessions from database on component mount
+  useEffect(() => {
+    if (user && isSubscribed) {
+      loadActiveSessions();
+    }
+  }, [user, isSubscribed]);
+
+  const loadActiveSessions = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('parking_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error loading active sessions:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setSpots(currentSpots => {
+          const newSpots = [...currentSpots];
+          
+          data.forEach(session => {
+            const spotIndex = newSpots.findIndex(s => s.id === session.spot_id);
+            if (spotIndex !== -1) {
+              const entryTime = new Date(session.entry_time);
+              const now = new Date();
+              const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
+              const cost = calculateCost(minutes, newSpots[spotIndex].type);
+              
+              newSpots[spotIndex] = {
+                ...newSpots[spotIndex],
+                isOccupied: true,
+                vehicleInfo: {
+                  licensePlate: session.license_plate,
+                  phoneNumber: session.phone_number,
+                  entryTime: entryTime,
+                  minutes: minutes,
+                  cost: cost
+                }
+              };
+            }
+          });
+          
+          return newSpots;
+        });
+      }
+    } catch (error) {
+      console.error('Error in loadActiveSessions:', error);
+    }
+  };
+
+  const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
+    const baseRate = vehicleType === 'car' ? 3.0 : 2.0; // R$ per hour
+    const hours = Math.ceil(minutes / 60);
+    return Math.max(hours * baseRate, baseRate); // Minimum 1 hour charge
+  };
 
   // Calculate available spots
   const availableCars = spots.filter(s => s.type === 'car' && !s.isOccupied).length;
@@ -258,6 +324,10 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({ onShowDas
           Sistema de Estacionamento
         </h1>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={onShowReports} className="flex items-center gap-2">
+            <BarChart3 size={16} />
+            Relatórios
+          </Button>
           <Button variant="outline" onClick={onShowDashboard} className="flex items-center gap-2">
             <Settings size={16} />
             Configurações

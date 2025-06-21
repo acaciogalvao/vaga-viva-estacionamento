@@ -2,17 +2,22 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNotifications } from '@/hooks/useNotifications';
 import AuthForm from '@/components/AuthForm';
 import ParkingSystemWithAuth from '@/components/ParkingSystemWithAuth';
 import UserDashboard from '@/components/UserDashboard';
 import SubscriptionPlans from '@/components/SubscriptionPlans';
+import ReportsPage from '@/components/ReportsPage';
 
-type ViewState = 'parking' | 'dashboard' | 'plans';
+type ViewState = 'parking' | 'dashboard' | 'plans' | 'reports';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { updateSubscription } = useSubscription();
   const [currentView, setCurrentView] = useState<ViewState>('parking');
+  
+  // Initialize notifications hook
+  useNotifications();
 
   if (authLoading) {
     return (
@@ -40,6 +45,10 @@ const Index = () => {
 
   const handleShowPlans = () => {
     setCurrentView('plans');
+  };
+
+  const handleShowReports = () => {
+    setCurrentView('reports');
   };
 
   const handleBackToParking = () => {
@@ -75,8 +84,15 @@ const Index = () => {
           </div>
         </div>
       );
+    case 'reports':
+      return <ReportsPage onBack={handleBackToParking} />;
     default:
-      return <ParkingSystemWithAuth onShowDashboard={handleShowDashboard} />;
+      return (
+        <ParkingSystemWithAuth 
+          onShowDashboard={handleShowDashboard} 
+          onShowReports={handleShowReports}
+        />
+      );
   }
 };
 
