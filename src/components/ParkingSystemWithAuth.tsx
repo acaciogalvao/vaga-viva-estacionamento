@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
+import { useAutoSync } from '@/hooks/useAutoSync';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking';
 import ParkingSpot from '@/components/ParkingSpot';
 import ParkingForm, { ParkingFormRef } from '@/components/ParkingForm';
 import { useToast } from '@/hooks/use-toast';
-import { X, User, Settings, BarChart3 } from 'lucide-react';
+import { X, User, Settings, BarChart3, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,6 +23,7 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
 }) => {
   const { user } = useAuth();
   const { isSubscribed, subscriptionTier } = useSubscription();
+  const isOnline = useOnlineStatus();
   
   // Initialize parking spots: 30 for cars (1-30) and 30 for motorcycles (31-60)
   const [spots, setSpots] = useState<ParkingSpotType[]>(() => {
@@ -50,6 +54,10 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
   const formRef = useRef<ParkingFormRef>(null);
+
+  // Hooks para manter o sistema sempre atualizado
+  useRealtimeUpdates({ spots, setSpots });
+  useAutoSync({ spots, setSpots });
 
   // Load active parking sessions from database on component mount
   useEffect(() => {
@@ -136,6 +144,15 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
       return;
     }
 
+    if (!isOnline) {
+      toast({
+        title: 'Sistema Offline',
+        description: 'Não é possível estacionar veículos sem conexão com a internet',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Find the first available spot for the vehicle type
     const availableSpotIndex = spots.findIndex(s => 
       s.type === data.vehicleType && !s.isOccupied
@@ -211,6 +228,15 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
 
   const handleReleaseSpot = async (spotId: number) => {
     if (!user) return;
+
+    if (!isOnline) {
+      toast({
+        title: 'Sistema Offline',
+        description: 'Não é possível liberar vagas sem conexão com a internet',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const spot = spots.find(s => s.id === spotId);
     if (!spot) return;
@@ -320,9 +346,21 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-primary bg-clip-text text-transparent">
-          Sistema de Estacionamento
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-center bg-gradient-primary bg-clip-text text-transparent">
+            Sistema de Estacionamento
+          </h1>
+          <div className="flex items-center gap-1">
+            {isOnline ? (
+              <Wifi className="text-green-500" size={20} />
+            ) : (
+              <WifiOff className="text-red-500" size={20} />
+            )}
+            <span className={`text-sm font-medium ${isOnline ? 'text-green-600' : 'text-red-600'}`}>
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
+          </div>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onShowReports} className="flex items-center gap-2">
             <BarChart3 size={16} />
