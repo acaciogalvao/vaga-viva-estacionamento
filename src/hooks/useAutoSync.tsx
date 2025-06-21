@@ -7,7 +7,7 @@ import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 
 interface UseAutoSyncProps {
   spots: ParkingSpotType[];
-  setSpots: (spots: ParkingSpotType[]) => void;
+  setSpots: (spots: ParkingSpotType[] | ((prev: ParkingSpotType[]) => ParkingSpotType[])) => void;
 }
 
 export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
@@ -32,7 +32,7 @@ export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
         }
 
         if (data && data.length > 0) {
-          setSpots(currentSpots => {
+          setSpots((currentSpots: ParkingSpotType[]) => {
             const newSpots = [...currentSpots];
             
             // Primeiro, limpar todas as vagas ocupadas

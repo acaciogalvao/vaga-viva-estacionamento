@@ -5,7 +5,7 @@ import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 
 interface UseRealtimeUpdatesProps {
   spots: ParkingSpotType[];
-  setSpots: (spots: ParkingSpotType[]) => void;
+  setSpots: (spots: ParkingSpotType[] | ((prev: ParkingSpotType[]) => ParkingSpotType[])) => void;
 }
 
 export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps) => {
@@ -23,7 +23,7 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
 
     // Função para atualizar os custos dos veículos estacionados
     const updateCosts = () => {
-      setSpots(currentSpots => {
+      setSpots((currentSpots: ParkingSpotType[]) => {
         return currentSpots.map(spot => {
           if (spot.isOccupied && spot.vehicleInfo) {
             const now = new Date();
