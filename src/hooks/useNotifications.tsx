@@ -32,6 +32,9 @@ export const useNotifications = () => {
         description: `Sua assinatura expira em ${daysUntilExpiration} dias. Renove para continuar usando o sistema.`,
         variant: 'destructive',
       });
+      
+      // Enviar email de notificação
+      sendExpirationEmail();
     }
     
     // Notificar se já expirou
@@ -41,6 +44,9 @@ export const useNotifications = () => {
         description: 'Sua assinatura expirou. Renove para continuar usando o sistema.',
         variant: 'destructive',
       });
+      
+      // Enviar email de expiração
+      sendExpirationEmail();
     }
   };
 
@@ -57,6 +63,8 @@ export const useNotifications = () => {
 
       if (error) {
         console.error('Error sending expiration email:', error);
+      } else {
+        console.log('Expiration notification email sent successfully');
       }
     } catch (error) {
       console.error('Error in sendExpirationEmail:', error);

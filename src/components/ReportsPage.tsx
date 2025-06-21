@@ -4,18 +4,21 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Car, Clock, DollarSign, BarChart3 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Car, Bike, Clock, DollarSign, Calendar, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ParkingSession {
   id: string;
   spot_id: number;
   license_plate: string;
-  vehicle_type: string;
+  phone_number: string;
+  vehicle_type: 'car' | 'motorcycle';
   entry_time: string;
   exit_time: string | null;
   cost: number;
   is_active: boolean;
+  created_at: string;
 }
 
 interface ReportsPageProps {
@@ -27,69 +30,82 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack }) => {
   const { toast } = useToast();
   const [sessions, setSessions] = useState<ParkingSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalSessions: 0,
-    activeSessions: 0,
-    totalRevenue: 0,
-    averageTime: 0,
-  });
+  const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'all'>('week');
 
   useEffect(() => {
     if (user) {
-      fetchParkingSessions();
+      loadSessions();
     }
-  }, [user]);
+  }, [user, dateFilter]);
 
-  const fetchParkingSessions = async () => {
+  const loadSessions = async () => {
     if (!user) return;
 
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('parking_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .order('entry_time', { ascending: false });
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching parking sessions:', error);
-        toast({
-          title: 'Erro',
-          description: 'Não foi possível carregar os relatórios',
-          variant: 'destructive',
-        });
-        return;
+      // Aplicar filtro de data
+      const now = new Date();
+      let startDate: Date;
+
+      switch (dateFilter) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        default:
+          startDate = new Date(0); // All time
       }
 
-      setSessions(data || []);
-      calculateStats(data || []);
+      if (dateFilter !== 'all') {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error loading sessions:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar os dados dos relatórios',
+          variant: 'destructive',
+        });
+      } else {
+        setSessions(data || []);
+      }
     } catch (error) {
-      console.error('Error in fetchParkingSessions:', error);
+      console.error('Error in loadSessions:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateStats = (sessionsData: ParkingSession[]) => {
-    const totalSessions = sessionsData.length;
-    const activeSessions = sessionsData.filter(s => s.is_active).length;
-    const totalRevenue = sessionsData.reduce((sum, s) => sum + (s.cost || 0), 0);
-    
-    const completedSessions = sessionsData.filter(s => !s.is_active && s.exit_time);
-    const totalMinutes = completedSessions.reduce((sum, s) => {
-      if (!s.exit_time) return sum;
-      const entry = new Date(s.entry_time);
-      const exit = new Date(s.exit_time);
-      return sum + Math.floor((exit.getTime() - entry.getTime()) / (1000 * 60));
-    }, 0);
-    
-    const averageTime = completedSessions.length > 0 ? Math.floor(totalMinutes / completedSessions.length) : 0;
+  const calculateStats = () => {
+    const totalSessions = sessions.length;
+    const activeSessions = sessions.filter(s => s.is_active).length;
+    const completedSessions = sessions.filter(s => !s.is_active).length;
+    const totalRevenue = sessions.reduce((sum, s) => sum + (s.cost || 0), 0);
+    const carSessions = sessions.filter(s => s.vehicle_type === 'car').length;
+    const motorcycleSessions = sessions.filter(s => s.vehicle_type === 'motorcycle').length;
 
-    setStats({
+    return {
       totalSessions,
       activeSessions,
+      completedSessions,
       totalRevenue,
-      averageTime,
-    });
+      carSessions,
+      motorcycleSessions,
+    };
   };
 
   const formatDate = (dateString: string) => {
@@ -97,20 +113,15 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack }) => {
   };
 
   const formatDuration = (entryTime: string, exitTime: string | null) => {
-    if (!exitTime) return 'Em andamento';
-    
     const entry = new Date(entryTime);
-    const exit = new Date(exitTime);
+    const exit = exitTime ? new Date(exitTime) : new Date();
     const minutes = Math.floor((exit.getTime() - entry.getTime()) / (1000 * 60));
-    
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    
-    if (hours > 0) {
-      return `${hours}h ${remainingMinutes}min`;
-    }
-    return `${remainingMinutes}min`;
+    return `${hours}h ${remainingMinutes}m`;
   };
+
+  const stats = calculateStats();
 
   if (loading) {
     return (
@@ -125,22 +136,42 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="container mx-auto max-w-6xl">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Relatórios
-          </h1>
-          <Button onClick={onBack} variant="outline">
-            ← Voltar
-          </Button>
+      <div className="container mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+              <ArrowLeft size={16} />
+              Voltar
+            </Button>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Relatórios do Sistema
+            </h1>
+          </div>
+          
+          <div className="flex gap-2">
+            {(['today', 'week', 'month', 'all'] as const).map((filter) => (
+              <Button
+                key={filter}
+                variant={dateFilter === filter ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setDateFilter(filter)}
+              >
+                {filter === 'today' ? 'Hoje' : 
+                 filter === 'week' ? 'Semana' :
+                 filter === 'month' ? 'Mês' : 'Todos'}
+              </Button>
+            ))}
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Cards de Estatísticas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Sessões</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp size={16} />
+                Total de Sessões
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalSessions}</div>
@@ -148,98 +179,132 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ onBack }) => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sessões Ativas</CardTitle>
-              <Car className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock size={16} />
+                Sessões Ativas
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.activeSessions}</div>
+              <div className="text-2xl font-bold text-green-600">{stats.activeSessions}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Calendar size={16} />
+                Finalizadas
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">R$ {stats.totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.completedSessions}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign size={16} />
+                Receita Total
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.averageTime}min</div>
+              <div className="text-2xl font-bold text-green-600">R$ {stats.totalRevenue.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Car size={16} />
+                Carros
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.carSessions}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Bike size={16} />
+                Motos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.motorcycleSessions}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sessions Table */}
+        {/* Histórico de Sessões */}
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de Sessões</CardTitle>
+            <CardTitle>Histórico de Estacionamento</CardTitle>
             <CardDescription>
-              Últimas {sessions.length} sessões de estacionamento
+              Histórico completo das sessões de estacionamento
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {sessions.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
-                  Nenhuma sessão encontrada
-                </p>
-              ) : (
-                sessions.map((session) => (
+            {sessions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Nenhuma sessão encontrada para o período selecionado.
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
+                    className="flex items-center justify-between p-4 border rounded-lg bg-white"
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4" />
-                        <span className="font-medium">{session.license_plate}</span>
+                        {session.vehicle_type === 'car' ? (
+                          <Car size={20} className="text-blue-500" />
+                        ) : (
+                          <Bike size={20} className="text-green-500" />
+                        )}
+                        <div>
+                          <p className="font-semibold">{session.license_plate}</p>
+                          <p className="text-sm text-gray-500">Vaga #{session.spot_id}</p>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        Vaga {session.spot_id} • {session.vehicle_type === 'car' ? 'Carro' : 'Moto'}
+                      
+                      <div>
+                        <p className="text-sm">
+                          <strong>Entrada:</strong> {formatDate(session.entry_time)}
+                        </p>
+                        {session.exit_time && (
+                          <p className="text-sm">
+                            <strong>Saída:</strong> {formatDate(session.exit_time)}
+                          </p>
+                        )}
+                        <p className="text-sm text-gray-500">
+                          Duração: {formatDuration(session.entry_time, session.exit_time)}
+                        </p>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-4 text-sm">
-                      <div className="text-center">
-                        <div className="font-medium">Entrada</div>
-                        <div className="text-gray-500">{formatDate(session.entry_time)}</div>
-                      </div>
+
+                    <div className="flex items-center gap-4">
+                      <Badge variant={session.is_active ? 'default' : 'secondary'}>
+                        {session.is_active ? 'Ativo' : 'Finalizado'}
+                      </Badge>
                       
-                      <div className="text-center">
-                        <div className="font-medium">Duração</div>
-                        <div className="text-gray-500">
-                          {formatDuration(session.entry_time, session.exit_time)}
-                        </div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className="font-medium">Valor</div>
-                        <div className="text-gray-500">R$ {session.cost.toFixed(2)}</div>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className={`px-2 py-1 rounded-full text-xs ${
-                          session.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {session.is_active ? 'Ativo' : 'Finalizado'}
-                        </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-green-600">
+                          R$ {session.cost.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {session.vehicle_type === 'car' ? 'Carro' : 'Moto'}
+                        </p>
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
