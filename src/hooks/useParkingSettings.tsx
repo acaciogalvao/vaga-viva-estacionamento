@@ -51,8 +51,8 @@ export const useParkingSettings = () => {
 
       if (data) {
         setSettings({
-          car_hourly_rate: data.car_hourly_rate || 3.0,
-          motorcycle_hourly_rate: data.motorcycle_hourly_rate || 2.0
+          car_hourly_rate: (data as any).car_hourly_rate || 3.0,
+          motorcycle_hourly_rate: (data as any).motorcycle_hourly_rate || 2.0
         });
       }
     } catch (error) {
@@ -71,7 +71,7 @@ export const useParkingSettings = () => {
         .update({
           car_hourly_rate: newSettings.car_hourly_rate,
           motorcycle_hourly_rate: newSettings.motorcycle_hourly_rate
-        })
+        } as any)
         .eq('id', user.id);
 
       if (error) {
