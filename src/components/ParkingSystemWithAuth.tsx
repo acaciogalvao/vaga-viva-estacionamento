@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -151,6 +152,47 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
         variant: 'destructive',
       });
       return;
+    }
+
+    // Check if license plate is already in use
+    const normalizedPlate = data.licensePlate.replace(/-/g, '');
+    const existingSpot = spots.find(spot => 
+      spot.isOccupied && 
+      spot.vehicleInfo?.licensePlate.replace(/-/g, '') === normalizedPlate
+    );
+
+    if (existingSpot) {
+      toast({
+        title: 'Veículo já estacionado',
+        description: `O veículo com placa ${data.licensePlate} já está estacionado na vaga ${existingSpot.id}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if there's an active session in the database for this license plate
+    try {
+      const { data: activeSessions, error } = await supabase
+        .from('parking_sessions')
+        .select('spot_id')
+        .eq('user_id', user.id)
+        .eq('license_plate', data.licensePlate)
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error checking active sessions:', error);
+      }
+
+      if (activeSessions && activeSessions.length > 0) {
+        toast({
+          title: 'Veículo já estacionado',
+          description: `O veículo com placa ${data.licensePlate} já possui uma sessão ativa na vaga ${activeSessions[0].spot_id}`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking database for active sessions:', error);
     }
 
     // Find the first available spot for the vehicle type

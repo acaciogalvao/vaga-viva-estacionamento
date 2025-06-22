@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ParkingSpot as ParkingSpotType, ParkingFormData } from '@/types/parking';
 import ParkingSpot from '@/components/ParkingSpot';
@@ -42,6 +43,22 @@ const ParkingSystem: React.FC = () => {
   const availableMotorcycles = spots.filter(s => s.type === 'motorcycle' && !s.isOccupied).length;
 
   const handleParkVehicle = (data: ParkingFormData) => {
+    // Check if license plate is already in use
+    const normalizedPlate = data.licensePlate.replace(/-/g, '');
+    const existingSpot = spots.find(spot => 
+      spot.isOccupied && 
+      spot.vehicleInfo?.licensePlate.replace(/-/g, '') === normalizedPlate
+    );
+
+    if (existingSpot) {
+      toast({
+        title: 'Veículo já estacionado',
+        description: `O veículo com placa ${data.licensePlate} já está estacionado na vaga ${existingSpot.id}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSpots(currentSpots => {
       const newSpots = [...currentSpots];
       
@@ -62,6 +79,17 @@ const ParkingSystem: React.FC = () => {
             cost: 0
           }
         };
+
+        toast({
+          title: 'Veículo estacionado',
+          description: `Veículo ${data.licensePlate} foi estacionado na vaga ${newSpots[spotIndex].id}`,
+        });
+      } else {
+        toast({
+          title: 'Sem vagas disponíveis',
+          description: `Não há vagas disponíveis para ${data.vehicleType === 'car' ? 'carros' : 'motos'}`,
+          variant: 'destructive',
+        });
       }
       
       return newSpots;
