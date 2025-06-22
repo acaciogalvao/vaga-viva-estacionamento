@@ -5,7 +5,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Calendar, CreditCard } from 'lucide-react';
+import { LogOut, Crown, User, Calendar, CreditCard } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import ParkingPriceSettings from '@/components/ParkingPriceSettings';
 
 interface UserDashboardProps {
   onSubscribe: () => void;
@@ -13,59 +16,81 @@ interface UserDashboardProps {
 
 const UserDashboard: React.FC<UserDashboardProps> = ({ onSubscribe }) => {
   const { user, signOut } = useAuth();
-  const { isSubscribed, subscriptionTier, subscriptionEnd, loading } = useSubscription();
+  const { subscription, isSubscribed, subscriptionTier } = useSubscription();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: 'Logout realizado',
+        description: 'Você foi desconectado com sucesso.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível fazer logout.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   const getSubscriptionStatus = () => {
-    if (!isSubscribed) return 'Sem assinatura';
-    if (subscriptionEnd && new Date(subscriptionEnd) < new Date()) return 'Expirada';
-    return 'Ativa';
+    if (!isSubscribed) return { text: 'Inativo', variant: 'secondary' as const };
+    if (subscriptionTier === 'premium') return { text: 'Premium', variant: 'default' as const };
+    return { text: 'Básico', variant: 'outline' as const };
   };
 
-  const getStatusColor = () => {
-    const status = getSubscriptionStatus();
-    if (status === 'Ativa') return 'bg-green-500';
-    if (status === 'Expirada') return 'bg-red-500';
-    return 'bg-yellow-500';
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-        <div>Carregando...</div>
-      </div>
-    );
-  }
+  const subscriptionStatus = getSubscriptionStatus();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
-      <div className="container mx-auto max-w-4xl">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Minha Conta
-          </h1>
-          <Button variant="outline" onClick={signOut} className="flex items-center gap-2">
-            <LogOut size={16} />
-            Sair
-          </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent">
+                Painel do Usuário
+              </h1>
+              <p className="text-gray-600">Gerencie sua conta e configurações</p>
+            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogOut size={16} />
+              Sair
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Profile Card */}
+        <div className="grid gap-6">
+          {/* User Info Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <User size={20} />
-                Perfil
+                <User className="h-5 w-5" />
+                Informações da Conta
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <p><strong>Email:</strong> {user?.email}</p>
-                <p><strong>Membro desde:</strong> {user?.created_at ? formatDate(user.created_at) : 'N/A'}</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Email</label>
+                  <p className="text-lg">{user?.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Data de Cadastro</label>
+                  <p className="text-lg flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {user?.created_at ? formatDate(user.created_at) : 'Não disponível'}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -74,73 +99,49 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onSubscribe }) => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard size={20} />
-                Assinatura
+                <CreditCard className="h-5 w-5" />
+                Status da Assinatura
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor()}>
-                    {getSubscriptionStatus()}
+                <div className="flex items-center gap-3">
+                  <Badge variant={subscriptionStatus.variant} className="flex items-center gap-1">
+                    {subscriptionTier === 'premium' && <Crown className="h-3 w-3" />}
+                    {subscriptionStatus.text}
                   </Badge>
-                  {subscriptionTier && (
-                    <Badge variant="outline">
-                      {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}
-                    </Badge>
-                  )}
                 </div>
                 
-                {subscriptionEnd && (
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    <span className="text-sm">
-                      Válida até: {formatDate(subscriptionEnd)}
-                    </span>
+                {isSubscribed && subscription ? (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Plano Atual</label>
+                      <p className="text-lg capitalize">{subscriptionTier || 'Básico'}</p>
+                    </div>
+                    {subscription.subscription_end && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Válido até</label>
+                        <p className="text-lg">{formatDate(subscription.subscription_end)}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-gray-600">
+                      Você não possui uma assinatura ativa. Assine um plano para acessar todas as funcionalidades.
+                    </p>
+                    <Button onClick={onSubscribe} className="w-full">
+                      Ver Planos de Assinatura
+                    </Button>
                   </div>
                 )}
-                
-                {!isSubscribed && (
-                  <Button onClick={onSubscribe} className="w-full">
-                    Assinar Agora
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Subscription Benefits */}
-        {isSubscribed && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Benefícios da sua Assinatura</CardTitle>
-              <CardDescription>
-                Aproveite todos os recursos do seu plano {subscriptionTier}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Acesso completo ao sistema</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Suporte técnico</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Relatórios detalhados</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Sem taxas adicionais</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* Pricing Settings Card - Only shown if subscribed */}
+          {isSubscribed && <ParkingPriceSettings />}
+        </div>
       </div>
     </div>
   );

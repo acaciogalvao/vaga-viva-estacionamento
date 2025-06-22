@@ -53,26 +53,32 @@ export type Database = {
       }
       profiles: {
         Row: {
+          car_hourly_rate: number | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          motorcycle_hourly_rate: number | null
           phone: string | null
           updated_at: string
         }
         Insert: {
+          car_hourly_rate?: number | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          motorcycle_hourly_rate?: number | null
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          car_hourly_rate?: number | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          motorcycle_hourly_rate?: number | null
           phone?: string | null
           updated_at?: string
         }

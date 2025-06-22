@@ -28,7 +28,6 @@ export const useParkingSettings = () => {
     if (!user) return;
 
     try {
-      // Try to fetch the settings, but handle the case where columns don't exist yet
       const { data, error } = await supabase
         .from('profiles')
         .select('car_hourly_rate, motorcycle_hourly_rate')
@@ -36,23 +35,14 @@ export const useParkingSettings = () => {
         .single();
 
       if (error) {
-        // If columns don't exist yet, just use default values
-        if (error.code === '42703') {
-          console.log('Price columns not found in profiles table. Using default values.');
-          setSettings({
-            car_hourly_rate: 3.0,
-            motorcycle_hourly_rate: 2.0
-          });
-        } else {
-          console.error('Error fetching settings:', error);
-        }
+        console.error('Error fetching settings:', error);
         return;
       }
 
       if (data) {
         setSettings({
-          car_hourly_rate: (data as any).car_hourly_rate || 3.0,
-          motorcycle_hourly_rate: (data as any).motorcycle_hourly_rate || 2.0
+          car_hourly_rate: data.car_hourly_rate || 3.0,
+          motorcycle_hourly_rate: data.motorcycle_hourly_rate || 2.0
         });
       }
     } catch (error) {
@@ -71,14 +61,14 @@ export const useParkingSettings = () => {
         .update({
           car_hourly_rate: newSettings.car_hourly_rate,
           motorcycle_hourly_rate: newSettings.motorcycle_hourly_rate
-        } as any)
+        })
         .eq('id', user.id);
 
       if (error) {
         console.error('Error updating settings:', error);
         toast({
           title: 'Erro',
-          description: 'Não foi possível salvar as configurações. Execute a migração SQL primeiro.',
+          description: 'Não foi possível salvar as configurações.',
           variant: 'destructive',
         });
       } else {
@@ -92,7 +82,7 @@ export const useParkingSettings = () => {
       console.error('Error in updateSettings:', error);
       toast({
         title: 'Erro',
-        description: 'Execute a migração SQL primeiro para adicionar as colunas de preços.',
+        description: 'Ocorreu um erro inesperado ao salvar as configurações.',
         variant: 'destructive',
       });
     }
