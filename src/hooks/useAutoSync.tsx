@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useParkingSettings } from '@/hooks/useParkingSettings';
+import { useParkingSettings } from '@/contexts/ParkingSettingsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 

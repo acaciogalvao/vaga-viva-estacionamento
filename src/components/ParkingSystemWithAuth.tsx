@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useParkingSettings } from '@/hooks/useParkingSettings';
+import { useParkingSettings } from '@/contexts/ParkingSettingsContext';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';

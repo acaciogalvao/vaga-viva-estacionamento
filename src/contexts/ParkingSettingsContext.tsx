@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +8,20 @@ interface ParkingSettings {
   motorcycle_hourly_rate: number;
 }
 
-export const useParkingSettings = () => {
+interface ParkingSettingsContextType {
+  settings: ParkingSettings;
+  loading: boolean;
+  updateSettings: (newSettings: ParkingSettings) => Promise<void>;
+  refreshSettings: () => Promise<void>;
+}
+
+const ParkingSettingsContext = createContext<ParkingSettingsContextType | undefined>(undefined);
+
+interface ParkingSettingsProviderProps {
+  children: ReactNode;
+}
+
+export const ParkingSettingsProvider: React.FC<ParkingSettingsProviderProps> = ({ children }) => {
   const [settings, setSettings] = useState<ParkingSettings>({
     car_hourly_rate: 3.0,
     motorcycle_hourly_rate: 2.0
@@ -17,12 +29,6 @@ export const useParkingSettings = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (user) {
-      fetchSettings();
-    }
-  }, [user]);
 
   const fetchSettings = async () => {
     if (!user) return;
@@ -40,10 +46,16 @@ export const useParkingSettings = () => {
       }
 
       if (data) {
-        setSettings({
+        const newSettings = {
           car_hourly_rate: data.car_hourly_rate || 3.0,
           motorcycle_hourly_rate: data.motorcycle_hourly_rate || 2.0
-        });
+        };
+        setSettings(newSettings);
+        
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new CustomEvent('parkingSettingsUpdated', { 
+          detail: newSettings 
+        }));
       }
     } catch (error) {
       console.error('Error in fetchSettings:', error);
@@ -73,9 +85,15 @@ export const useParkingSettings = () => {
         });
       } else {
         setSettings(newSettings);
+        
+        // Dispatch custom event to notify other components immediately
+        window.dispatchEvent(new CustomEvent('parkingSettingsUpdated', { 
+          detail: newSettings 
+        }));
+        
         toast({
           title: 'Configurações salvas!',
-          description: 'Os valores do estacionamento foram atualizados com sucesso.',
+          description: 'Os valores do estacionamento foram atualizados em todas as vagas.',
         });
       }
     } catch (error) {
@@ -88,10 +106,30 @@ export const useParkingSettings = () => {
     }
   };
 
-  return {
+  useEffect(() => {
+    if (user) {
+      fetchSettings();
+    }
+  }, [user]);
+
+  const value = {
     settings,
     loading,
     updateSettings,
-    fetchSettings
+    refreshSettings: fetchSettings
   };
+
+  return (
+    <ParkingSettingsContext.Provider value={value}>
+      {children}
+    </ParkingSettingsContext.Provider>
+  );
+};
+
+export const useParkingSettings = () => {
+  const context = useContext(ParkingSettingsContext);
+  if (context === undefined) {
+    throw new Error('useParkingSettings must be used within a ParkingSettingsProvider');
+  }
+  return context;
 };

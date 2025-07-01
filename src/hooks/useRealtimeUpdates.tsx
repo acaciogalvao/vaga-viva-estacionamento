@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useParkingSettings } from '@/hooks/useParkingSettings';
+import { useParkingSettings } from '@/contexts/ParkingSettingsContext';
 import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 
 interface UseRealtimeUpdatesProps {
@@ -53,6 +53,16 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     // Atualizar imediatamente na primeira execução e quando configurações mudarem
     updateCosts();
 
-    return () => clearInterval(interval);
+    // Escutar mudanças nas configurações para recalcular imediatamente
+    const handleSettingsUpdate = () => {
+      updateCosts();
+    };
+
+    window.addEventListener('parkingSettingsUpdated', handleSettingsUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
+    };
   }, [user, setSpots, settings]);
 };
