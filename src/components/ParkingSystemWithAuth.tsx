@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useParkingSettings } from '@/hooks/useParkingSettings';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 import { useAutoSync } from '@/hooks/useAutoSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -24,6 +25,7 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
 }) => {
   const { user } = useAuth();
   const { isSubscribed, subscriptionTier } = useSubscription();
+  const { settings } = useParkingSettings();
   const isOnline = useOnlineStatus();
   
   // Initialize parking spots: 30 for cars (1-30) and 30 for motorcycles (31-60)
@@ -117,7 +119,7 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
   };
 
   const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
-    const baseRate = vehicleType === 'car' ? 3.0 : 2.0; // R$ per hour
+    const baseRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
     const hours = Math.ceil(minutes / 60);
     return Math.max(hours * baseRate, baseRate); // Minimum 1 hour charge
   };
