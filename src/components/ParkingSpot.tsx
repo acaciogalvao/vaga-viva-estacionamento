@@ -20,51 +20,28 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
   onClearSearch 
 }) => {
   const [seconds, setSeconds] = useState(0);
-  const [minutes, setMinutes] = useState(0);
-  const [hours, setHours] = useState(0);
-  const [cost, setCost] = useState(0);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     
     if (spot.isOccupied && spot.vehicleInfo) {
-      // Função para calcular o tempo e custo
-      const updateTimeAndCost = () => {
+      // Função para calcular apenas os segundos
+      const updateSeconds = () => {
         const now = new Date();
         const entryTime = new Date(spot.vehicleInfo!.entryTime);
         const diffInSeconds = Math.floor((now.getTime() - entryTime.getTime()) / 1000);
-        
-        const newHours = Math.floor(diffInSeconds / 3600);
-        const newMinutes = Math.floor((diffInSeconds % 3600) / 60);
         const newSeconds = diffInSeconds % 60;
-        
-        // Usar o valor das configurações já calculado no hook useRealtimeUpdates
-        const totalMinutes = Math.floor(diffInSeconds / 60);
-        const newCost = spot.vehicleInfo?.cost || 0;
-        
-        setHours(newHours);
-        setMinutes(newMinutes);
         setSeconds(newSeconds);
-        setCost(newCost);
-        
-        // Atualizar as informações da vaga no objeto original
-        if (spot.vehicleInfo) {
-          spot.vehicleInfo.minutes = totalMinutes;
-          spot.vehicleInfo.cost = newCost;
-        }
       };
       
       // Executar cálculo imediatamente
-      updateTimeAndCost();
+      updateSeconds();
       
-      // Definir um intervalo para atualizar a cada segundo
-      timer = setInterval(updateTimeAndCost, 1000);
+      // Definir um intervalo para atualizar apenas os segundos a cada segundo
+      timer = setInterval(updateSeconds, 1000);
     } else {
       // Resetar valores quando a vaga não está ocupada
-      setHours(0);
-      setMinutes(0);
       setSeconds(0);
-      setCost(0);
     }
     
     // Limpar o intervalo na desmontagem
@@ -89,7 +66,9 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
     );
   };
 
-  const formatTime = (h: number, m: number, s: number): string => {
+  const formatTime = (totalMinutes: number, s: number): string => {
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
@@ -129,13 +108,13 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
             <div>
               <div className="font-bold">Tempo:</div>
               <div className="bg-white/20 rounded-md p-1 text-center">
-                {formatTime(hours, minutes, seconds)}
+                {formatTime(spot.vehicleInfo.minutes || 0, seconds)}
               </div>
             </div>
             <div>
               <div className="font-bold">Valor:</div>
               <div className="bg-white/20 rounded-md p-1 text-center">
-                {formatCurrency(cost)}
+                {formatCurrency(spot.vehicleInfo.cost || 0)}
               </div>
             </div>
           </div>
