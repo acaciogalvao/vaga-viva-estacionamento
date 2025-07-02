@@ -21,6 +21,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
 }) => {
   const [seconds, setSeconds] = useState(0);
 
+  // Atualizar valores sempre que as informações da vaga mudarem
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     
@@ -48,7 +49,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [spot.isOccupied, spot.vehicleInfo?.entryTime]);
+  }, [spot.isOccupied, spot.vehicleInfo?.entryTime, spot.vehicleInfo?.minutes, spot.vehicleInfo?.cost]);
 
   const getSpotClassName = () => {
     const baseClasses = "gradient-card p-4 flex flex-col h-full min-h-[180px] relative";

@@ -46,8 +46,8 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
       });
     };
 
-    // Atualizar custos a cada minuto
-    const interval = setInterval(updateCosts, 60000); // 60 segundos
+    // Atualizar custos a cada 10 segundos para melhor responsividade
+    const interval = setInterval(updateCosts, 10000); // 10 segundos
 
     // Atualizar imediatamente na primeira execução e quando configurações mudarem
     updateCosts();
