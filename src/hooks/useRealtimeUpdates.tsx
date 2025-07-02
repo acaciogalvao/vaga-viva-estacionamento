@@ -16,7 +16,10 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
   useEffect(() => {
     if (!user) return;
 
-    // Função para calcular o custo baseado no tempo e configurações personalizadas
+    let mainInterval: NodeJS.Timeout | null = null;
+    let syncTimeout: NodeJS.Timeout | null = null;
+
+    // Função para calcular o custo baseado no tempo e configurações atuais
     const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
       const hourlyRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
       return parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
@@ -25,10 +28,10 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     // Função para atualizar os custos dos veículos estacionados
     const updateCosts = () => {
       setSpots((currentSpots: ParkingSpotType[]) => {
+        const now = new Date();
         return currentSpots.map(spot => {
           if (spot.isOccupied && spot.vehicleInfo) {
-            const now = new Date();
-            const entryTime = spot.vehicleInfo.entryTime;
+            const entryTime = new Date(spot.vehicleInfo.entryTime);
             const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
             const cost = calculateCost(minutes, spot.type);
             
@@ -46,34 +49,44 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
       });
     };
 
-    // Calcular tempo até o próximo minuto para sincronizar
-    const now = new Date();
-    const secondsUntilNextMinute = 60 - now.getSeconds();
-    const millisecondsUntilNextMinute = (secondsUntilNextMinute * 1000) - now.getMilliseconds();
+    // Função para iniciar o sistema de atualização sincronizada
+    const startSyncronizedUpdates = () => {
+      // Limpar timers existentes
+      if (syncTimeout) clearTimeout(syncTimeout);
+      if (mainInterval) clearInterval(mainInterval);
 
-    // Atualizar imediatamente na primeira execução
-    updateCosts();
+      // Calcular tempo até o próximo minuto exato
+      const now = new Date();
+      const secondsUntilNextMinute = 60 - now.getSeconds();
+      const millisecondsUntilNextMinute = (secondsUntilNextMinute * 1000) - now.getMilliseconds();
 
-    let mainInterval: NodeJS.Timeout | null = null;
-
-    // Definir timeout para sincronizar com o próximo minuto
-    const syncTimeout = setTimeout(() => {
+      // Atualizar imediatamente
       updateCosts();
-      // Depois disso, atualizar exatamente a cada 60 segundos
-      mainInterval = setInterval(updateCosts, 60000);
-    }, millisecondsUntilNextMinute);
 
-    // Escutar mudanças nas configurações para recalcular imediatamente
+      // Sincronizar com o próximo minuto exato
+      syncTimeout = setTimeout(() => {
+        updateCosts();
+        // Configurar intervalo para atualizar exatamente a cada minuto
+        mainInterval = setInterval(updateCosts, 60000);
+      }, millisecondsUntilNextMinute);
+    };
+
+    // Iniciar atualizações sincronizadas
+    startSyncronizedUpdates();
+
+    // Escutar mudanças nas configurações para recalcular e ressincronizar
     const handleSettingsUpdate = () => {
       updateCosts();
+      // Ressincronizar após mudança de configuração
+      startSyncronizedUpdates();
     };
 
     window.addEventListener('parkingSettingsUpdated', handleSettingsUpdate);
 
     return () => {
-      clearTimeout(syncTimeout);
+      if (syncTimeout) clearTimeout(syncTimeout);
       if (mainInterval) clearInterval(mainInterval);
       window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
     };
-  }, [user, setSpots, settings]);
+  }, [user, setSpots, settings.car_hourly_rate, settings.motorcycle_hourly_rate]);
 };
