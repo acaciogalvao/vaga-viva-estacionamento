@@ -46,11 +46,22 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
       });
     };
 
-    // Atualizar custos a cada 10 segundos para melhor responsividade
-    const interval = setInterval(updateCosts, 10000); // 10 segundos
+    // Calcular tempo até o próximo minuto para sincronizar
+    const now = new Date();
+    const secondsUntilNextMinute = 60 - now.getSeconds();
+    const millisecondsUntilNextMinute = (secondsUntilNextMinute * 1000) - now.getMilliseconds();
 
-    // Atualizar imediatamente na primeira execução e quando configurações mudarem
+    // Atualizar imediatamente na primeira execução
     updateCosts();
+
+    let mainInterval: NodeJS.Timeout | null = null;
+
+    // Definir timeout para sincronizar com o próximo minuto
+    const syncTimeout = setTimeout(() => {
+      updateCosts();
+      // Depois disso, atualizar exatamente a cada 60 segundos
+      mainInterval = setInterval(updateCosts, 60000);
+    }, millisecondsUntilNextMinute);
 
     // Escutar mudanças nas configurações para recalcular imediatamente
     const handleSettingsUpdate = () => {
@@ -60,7 +71,8 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     window.addEventListener('parkingSettingsUpdated', handleSettingsUpdate);
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(syncTimeout);
+      if (mainInterval) clearInterval(mainInterval);
       window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
     };
   }, [user, setSpots, settings]);
