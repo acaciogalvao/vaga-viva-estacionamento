@@ -55,9 +55,8 @@ export const useAutoSync = ({ spots, setSpots }: UseAutoSyncProps) => {
                 const entryTime = new Date(session.entry_time);
                 const now = new Date();
                 const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-                const baseRate = session.vehicle_type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
-                const hours = Math.ceil(minutes / 60);
-                const cost = Math.max(hours * baseRate, baseRate);
+                const hourlyRate = session.vehicle_type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
+                const cost = parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
                 
                 newSpots[spotIndex] = {
                   ...newSpots[spotIndex],

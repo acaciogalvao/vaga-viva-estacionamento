@@ -18,9 +18,8 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
 
     // Função para calcular o custo baseado no tempo e configurações personalizadas
     const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
-      const baseRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
-      const hours = Math.ceil(minutes / 60);
-      return Math.max(hours * baseRate, baseRate); // Mínimo 1 hora de cobrança
+      const hourlyRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
+      return parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
     };
 
     // Função para atualizar os custos dos veículos estacionados

@@ -38,10 +38,9 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
         const newMinutes = Math.floor((diffInSeconds % 3600) / 60);
         const newSeconds = diffInSeconds % 60;
         
-        // Calcular custo: R$10 por hora para carros, R$8 por hora para motos
-        const hourlyRate = spot.type === 'car' ? 10 : 8;
+        // Usar o valor das configurações já calculado no hook useRealtimeUpdates
         const totalMinutes = Math.floor(diffInSeconds / 60);
-        const newCost = parseFloat(((hourlyRate * totalMinutes) / 60).toFixed(2));
+        const newCost = spot.vehicleInfo?.cost || 0;
         
         setHours(newHours);
         setMinutes(newMinutes);
