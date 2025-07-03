@@ -16,8 +16,8 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
   useEffect(() => {
     if (!user) return;
 
+    console.log('🔄 Starting realtime updates system');
     let mainInterval: NodeJS.Timeout | null = null;
-    let syncTimeout: NodeJS.Timeout | null = null;
 
     // Função para calcular o custo baseado no tempo e configurações atuais
     const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
@@ -27,13 +27,19 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
 
     // Função para atualizar os custos dos veículos estacionados
     const updateCosts = () => {
+      console.log('⏰ Updating costs at:', new Date().toLocaleTimeString());
+      
       setSpots((currentSpots: ParkingSpotType[]) => {
         const now = new Date();
-        return currentSpots.map(spot => {
+        let updatedCount = 0;
+        
+        const newSpots = currentSpots.map(spot => {
           if (spot.isOccupied && spot.vehicleInfo) {
             const entryTime = new Date(spot.vehicleInfo.entryTime);
             const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
             const cost = calculateCost(minutes, spot.type);
+            
+            updatedCount++;
             
             return {
               ...spot,
@@ -46,45 +52,33 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
           }
           return spot;
         });
+        
+        if (updatedCount > 0) {
+          console.log(`💰 Updated ${updatedCount} occupied spots`);
+        }
+        
+        return newSpots;
       });
     };
 
-    // Função para iniciar o sistema de atualização sincronizada
-    const startSyncronizedUpdates = () => {
-      // Limpar timers existentes
-      if (syncTimeout) clearTimeout(syncTimeout);
-      if (mainInterval) clearInterval(mainInterval);
+    // Atualizar imediatamente
+    updateCosts();
 
-      // Calcular tempo até o próximo minuto exato
-      const now = new Date();
-      const secondsUntilNextMinute = 60 - now.getSeconds();
-      const millisecondsUntilNextMinute = (secondsUntilNextMinute * 1000) - now.getMilliseconds();
-
-      // Atualizar imediatamente
+    // Configurar intervalo para atualizar a cada minuto (60 segundos)
+    mainInterval = setInterval(() => {
       updateCosts();
+    }, 60000);
 
-      // Sincronizar com o próximo minuto exato
-      syncTimeout = setTimeout(() => {
-        updateCosts();
-        // Configurar intervalo para atualizar exatamente a cada minuto
-        mainInterval = setInterval(updateCosts, 60000);
-      }, millisecondsUntilNextMinute);
-    };
-
-    // Iniciar atualizações sincronizadas
-    startSyncronizedUpdates();
-
-    // Escutar mudanças nas configurações para recalcular e ressincronizar
+    // Escutar mudanças nas configurações para recalcular imediatamente
     const handleSettingsUpdate = () => {
+      console.log('⚙️ Settings updated, recalculating costs');
       updateCosts();
-      // Ressincronizar após mudança de configuração
-      startSyncronizedUpdates();
     };
 
     window.addEventListener('parkingSettingsUpdated', handleSettingsUpdate);
 
     return () => {
-      if (syncTimeout) clearTimeout(syncTimeout);
+      console.log('🛑 Cleaning up realtime updates');
       if (mainInterval) clearInterval(mainInterval);
       window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
     };
