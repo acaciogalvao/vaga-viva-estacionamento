@@ -19,12 +19,6 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     console.log('🔄 Starting realtime updates system');
     let mainInterval: NodeJS.Timeout | null = null;
 
-    // Função para calcular o custo baseado no tempo e configurações atuais
-    const calculateCost = (minutes: number, vehicleType: 'car' | 'motorcycle') => {
-      const hourlyRate = vehicleType === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
-      return parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
-    };
-
     // Função para atualizar os custos dos veículos estacionados
     const updateCosts = () => {
       console.log('⏰ Updating costs at:', new Date().toLocaleTimeString());
@@ -37,7 +31,10 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
           if (spot.isOccupied && spot.vehicleInfo) {
             const entryTime = new Date(spot.vehicleInfo.entryTime);
             const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
-            const cost = calculateCost(minutes, spot.type);
+            
+            // Calcular custo usando as configurações atuais
+            const hourlyRate = spot.type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
+            const cost = parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
             
             updatedCount++;
             
@@ -82,5 +79,5 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
       if (mainInterval) clearInterval(mainInterval);
       window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
     };
-  }, [user, setSpots, settings.car_hourly_rate, settings.motorcycle_hourly_rate]);
+  }, [user, setSpots]); // Removendo settings das dependências para evitar reinicializações
 };
