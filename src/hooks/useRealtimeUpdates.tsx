@@ -32,9 +32,10 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
             const totalSeconds = Math.floor((now.getTime() - entryTime.getTime()) / 1000);
             const minutes = Math.floor(totalSeconds / 60);
             
-            // Calcular custo usando as configurações atuais
+            // Calcular custo usando as configurações atuais (valor por minuto)
             const hourlyRate = spot.type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
-            const cost = parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
+            const minuteRate = hourlyRate / 60; // Valor por minuto
+            const cost = parseFloat((minuteRate * minutes).toFixed(2));
             
             // Verificar se houve mudança nos valores importantes
             if (spot.vehicleInfo.minutes !== minutes || spot.vehicleInfo.cost !== cost) {
