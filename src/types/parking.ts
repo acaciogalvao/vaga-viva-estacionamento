@@ -11,6 +11,7 @@ export interface ParkingSpot {
     entryTime: Date;
     minutes: number;
     cost: number;
+    seconds?: number;
   };
 }
 

@@ -16,42 +16,46 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
   useEffect(() => {
     if (!user) return;
 
-    console.log('🔄 Starting realtime updates system');
-    let mainInterval: NodeJS.Timeout | null = null;
+    console.log('🔄 Starting unified timer system');
+    let unifiedInterval: NodeJS.Timeout | null = null;
 
-    // Função para atualizar os custos dos veículos estacionados
-    const updateCosts = () => {
-      console.log('⏰ Updating costs at:', new Date().toLocaleTimeString());
+    // Função unificada que atualiza tudo a cada segundo
+    const updateAll = () => {
+      const now = new Date();
       
       setSpots((currentSpots: ParkingSpotType[]) => {
-        const now = new Date();
-        let updatedCount = 0;
+        let hasUpdates = false;
         
         const newSpots = currentSpots.map(spot => {
           if (spot.isOccupied && spot.vehicleInfo) {
             const entryTime = new Date(spot.vehicleInfo.entryTime);
-            const minutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
+            const totalSeconds = Math.floor((now.getTime() - entryTime.getTime()) / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
             
             // Calcular custo usando as configurações atuais
             const hourlyRate = spot.type === 'car' ? settings.car_hourly_rate : settings.motorcycle_hourly_rate;
             const cost = parseFloat(((hourlyRate * minutes) / 60).toFixed(2));
             
-            updatedCount++;
+            // Verificar se houve mudança nos valores importantes
+            if (spot.vehicleInfo.minutes !== minutes || spot.vehicleInfo.cost !== cost) {
+              hasUpdates = true;
+            }
             
             return {
               ...spot,
               vehicleInfo: {
                 ...spot.vehicleInfo,
                 minutes,
-                cost
+                cost,
+                seconds: totalSeconds % 60 // Adicionar segundos para o cronômetro
               }
             };
           }
           return spot;
         });
         
-        if (updatedCount > 0) {
-          console.log(`💰 Updated ${updatedCount} occupied spots`);
+        if (hasUpdates) {
+          console.log('⏰ Updated parking data at:', now.toLocaleTimeString());
         }
         
         return newSpots;
@@ -59,25 +63,23 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     };
 
     // Atualizar imediatamente
-    updateCosts();
+    updateAll();
 
-    // Configurar intervalo para atualizar a cada minuto (60 segundos)
-    mainInterval = setInterval(() => {
-      updateCosts();
-    }, 60000);
+    // Configurar intervalo para atualizar a cada segundo
+    unifiedInterval = setInterval(updateAll, 1000);
 
     // Escutar mudanças nas configurações para recalcular imediatamente
     const handleSettingsUpdate = () => {
       console.log('⚙️ Settings updated, recalculating costs');
-      updateCosts();
+      updateAll();
     };
 
     window.addEventListener('parkingSettingsUpdated', handleSettingsUpdate);
 
     return () => {
-      console.log('🛑 Cleaning up realtime updates');
-      if (mainInterval) clearInterval(mainInterval);
+      console.log('🛑 Cleaning up unified timer');
+      if (unifiedInterval) clearInterval(unifiedInterval);
       window.removeEventListener('parkingSettingsUpdated', handleSettingsUpdate);
     };
-  }, [user, setSpots]); // Removendo settings das dependências para evitar reinicializações
+  }, [user, setSpots]);
 };

@@ -19,37 +19,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
   isSearchResult = false,
   onClearSearch 
 }) => {
-  const [seconds, setSeconds] = useState(0);
-
-  // Atualizar valores sempre que as informações da vaga mudarem
-  useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-    
-    if (spot.isOccupied && spot.vehicleInfo) {
-      // Função para calcular apenas os segundos
-      const updateSeconds = () => {
-        const now = new Date();
-        const entryTime = new Date(spot.vehicleInfo!.entryTime);
-        const diffInSeconds = Math.floor((now.getTime() - entryTime.getTime()) / 1000);
-        const newSeconds = diffInSeconds % 60;
-        setSeconds(newSeconds);
-      };
-      
-      // Executar cálculo imediatamente
-      updateSeconds();
-      
-      // Definir um intervalo para atualizar apenas os segundos a cada segundo
-      timer = setInterval(updateSeconds, 1000);
-    } else {
-      // Resetar valores quando a vaga não está ocupada
-      setSeconds(0);
-    }
-    
-    // Limpar o intervalo na desmontagem
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [spot.isOccupied, spot.vehicleInfo?.entryTime, spot.vehicleInfo?.minutes, spot.vehicleInfo?.cost]);
+  // Remover o timer local - agora os segundos vêm do useRealtimeUpdates
 
   const getSpotClassName = () => {
     const baseClasses = "gradient-card p-4 flex flex-col h-full min-h-[180px] relative";
@@ -67,9 +37,10 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
     );
   };
 
-  const formatTime = (totalMinutes: number, s: number): string => {
+  const formatTime = (totalMinutes: number, seconds: number): string => {
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
+    const s = seconds || 0;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
@@ -109,7 +80,7 @@ const ParkingSpot: React.FC<ParkingSpotProps> = ({
             <div>
               <div className="font-bold">Tempo:</div>
               <div className="bg-white/20 rounded-md p-1 text-center">
-                {formatTime(spot.vehicleInfo.minutes || 0, seconds)}
+                {formatTime(spot.vehicleInfo.minutes || 0, (spot.vehicleInfo as any)?.seconds || 0)}
               </div>
             </div>
             <div>
