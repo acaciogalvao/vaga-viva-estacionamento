@@ -3,23 +3,26 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUserRole } from '@/hooks/useUserRole';
 import AuthForm from '@/components/AuthForm';
 import ParkingSystemWithAuth from '@/components/ParkingSystemWithAuth';
 import UserDashboard from '@/components/UserDashboard';
 import SubscriptionPlans from '@/components/SubscriptionPlans';
 import ReportsPage from '@/components/ReportsPage';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 
 type ViewState = 'parking' | 'dashboard' | 'plans' | 'reports';
 
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { updateSubscription } = useSubscription();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const [currentView, setCurrentView] = useState<ViewState>('parking');
   
   // Initialize notifications hook
   useNotifications();
 
-  if (authLoading) {
+  if (authLoading || roleLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -32,6 +35,11 @@ const Index = () => {
 
   if (!user) {
     return <AuthForm />;
+  }
+
+  // Redirect admins to admin dashboard
+  if (isAdmin) {
+    return <AdminDashboard />;
   }
 
   const handleSelectPlan = async (planId: string) => {

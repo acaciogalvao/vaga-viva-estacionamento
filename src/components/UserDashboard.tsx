@@ -8,8 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { LogOut, Crown, User, Calendar, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import ParkingPriceSettings from '@/components/ParkingPriceSettings';
-
 interface UserDashboardProps {
   onSubscribe: () => void;
 }
@@ -139,8 +137,20 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ onSubscribe }) => {
             </CardContent>
           </Card>
 
-          {/* Pricing Settings Card - Only shown if subscribed */}
-          {isSubscribed && <ParkingPriceSettings />}
+          {/* Note about configuration */}
+          {isSubscribed && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações do Sistema</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  As configurações de preços são gerenciadas pelo administrador do sistema.
+                  Entre em contato com o suporte se precisar de ajustes nos valores.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
