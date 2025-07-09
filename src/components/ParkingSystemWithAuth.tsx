@@ -59,7 +59,7 @@ const ParkingSystemWithAuth: React.FC<ParkingSystemWithAuthProps> = ({
   const formRef = useRef<ParkingFormRef>(null);
 
   // Hooks para manter o sistema sempre atualizado
-  useRealtimeUpdates({ spots, setSpots });
+  useRealtimeUpdates({ spots, setSpots, searchResults, setSearchResults });
   useAutoSync({ spots, setSpots });
 
   // Load active parking sessions from database on component mount

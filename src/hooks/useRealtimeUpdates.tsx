@@ -7,9 +7,11 @@ import { ParkingSpot as ParkingSpotType } from '@/types/parking';
 interface UseRealtimeUpdatesProps {
   spots: ParkingSpotType[];
   setSpots: (spots: ParkingSpotType[] | ((prev: ParkingSpotType[]) => ParkingSpotType[])) => void;
+  searchResults?: ParkingSpotType[];
+  setSearchResults?: (results: ParkingSpotType[] | ((prev: ParkingSpotType[]) => ParkingSpotType[])) => void;
 }
 
-export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps) => {
+export const useRealtimeUpdates = ({ spots, setSpots, searchResults, setSearchResults }: UseRealtimeUpdatesProps) => {
   const { user } = useAuth();
   const { settings } = useParkingSettings();
 
@@ -23,7 +25,8 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
     const updateAll = () => {
       const now = new Date();
       
-      setSpots((currentSpots: ParkingSpotType[]) => {
+      // Função para atualizar spots
+      const updateSpots = (currentSpots: ParkingSpotType[]) => {
         let hasUpdates = false;
         
         const newSpots = currentSpots.map(spot => {
@@ -60,7 +63,15 @@ export const useRealtimeUpdates = ({ spots, setSpots }: UseRealtimeUpdatesProps)
         }
         
         return newSpots;
-      });
+      };
+
+      // Atualizar spots principais
+      setSpots(updateSpots);
+
+      // Atualizar search results se existirem
+      if (searchResults && setSearchResults) {
+        setSearchResults(updateSpots);
+      }
     };
 
     // Atualizar imediatamente
